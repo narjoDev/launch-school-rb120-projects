@@ -68,6 +68,7 @@ class Board
   COL_GROUPS = COLS.map { |c| ROWS.map { |r| r + c } }
   DIAG_GROUPS = [(0..2).map { |offset| ROWS[offset] + COLS[offset] },
                  (0..2).map { |offset| ROWS[offset] + COLS[2 - offset] }]
+  WINNING_LINES = ROW_GROUPS + COL_GROUPS + DIAG_GROUPS
 
   PLAYER_TOKENS = %w(X O)
   NIL_TOKEN = '.'
@@ -91,13 +92,11 @@ class Board
   end
 
   def game_over?
-    squares.values.all? || winner
+    open_squares.empty? || winner
   end
 
   def winner
-    all_groups = ROW_GROUPS + COL_GROUPS + DIAG_GROUPS
-
-    id_lines = all_groups.map do |group|
+    id_lines = WINNING_LINES.map do |group|
       group.map { |name| squares[name] }
     end
 
@@ -193,7 +192,8 @@ class TTTGame
 
   def display_score
     players.values.each do |player|
-      puts "#{player.name} has #{player.score} points."
+      plural_suffix = player.score == 1 ? '' : 's'
+      puts "#{player.name} has #{player.score} point#{plural_suffix}."
     end
   end
 end
