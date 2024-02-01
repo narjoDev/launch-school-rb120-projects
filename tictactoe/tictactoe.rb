@@ -61,7 +61,6 @@ end
 class Board
   attr_reader :squares, :players
 
-  # TODO: clean this up (hard code?)
   ROWS = %w(a b c)
   COLS = %w(1 2 3)
   SQUARE_NAMES = %w(a1 a2 a3 b1 b2 b3 c1 c2 c3)
@@ -166,8 +165,10 @@ class TTTGame
 
   def play_round
     board.reset
+    board.display_grid
     players.values.cycle do |player|
       player.move
+      system 'clear'
       board.display_grid
       break if board.game_over?
     end
