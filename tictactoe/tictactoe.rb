@@ -29,7 +29,7 @@ class Human < Player
       break if options.include?(choice)
       puts "Invalid input"
     end
-    board.write(choice, id)
+    board[choice] = id
   end
 
   def choose_name
@@ -48,8 +48,9 @@ class Computer < Player
   def move
     options = board.open_squares
     choice = options.sample
+    # TODO: relocate display logic from move choice method
     puts "#{name} plays #{choice}"
-    board.write(choice, id)
+    board[choice] = id
   end
 
   def choose_name
@@ -60,15 +61,21 @@ end
 class Board
   attr_reader :squares, :players
 
+  # TODO: clean this up (hard code?)
   ROWS = %w(a b c)
   COLS = %w(1 2 3)
-  SQUARE_NAMES = ROWS.product(COLS).map(&:join)
+  SQUARE_NAMES = %w(a1 a2 a3 b1 b2 b3 c1 c2 c3)
 
-  ROW_GROUPS = ROWS.map { |r| COLS.map { |c| r + c } }
-  COL_GROUPS = COLS.map { |c| ROWS.map { |r| r + c } }
-  DIAG_GROUPS = [(0..2).map { |offset| ROWS[offset] + COLS[offset] },
-                 (0..2).map { |offset| ROWS[offset] + COLS[2 - offset] }]
-  WINNING_LINES = ROW_GROUPS + COL_GROUPS + DIAG_GROUPS
+  ROW_GROUPS = [["a1", "a2", "a3"], ["b1", "b2", "b3"], ["c1", "c2", "c3"]]
+
+  WINNING_LINES = [["a1", "a2", "a3"],
+                   ["b1", "b2", "b3"],
+                   ["c1", "c2", "c3"],
+                   ["a1", "b1", "c1"],
+                   ["a2", "b2", "c2"],
+                   ["a3", "b3", "c3"],
+                   ["a1", "b2", "c3"],
+                   ["a3", "b2", "c1"]]
 
   PLAYER_TOKENS = %w(X O)
   NIL_TOKEN = '.'
@@ -87,7 +94,7 @@ class Board
     squares.keys.select { |name| squares[name].nil? }
   end
 
-  def write(name, contents)
+  def []=(name, contents)
     squares[name] = contents
   end
 
@@ -95,17 +102,15 @@ class Board
     open_squares.empty? || winner
   end
 
+  # returns a Player object, or nil if no winner
   def winner
-    id_lines = WINNING_LINES.map do |group|
-      group.map { |name| squares[name] }
+    WINNING_LINES.each do |line|
+      values = line.map { |name| squares[name] }
+      next unless values.all? && values.uniq.size == 1
+      winner_id = values[0]
+      return players[winner_id]
     end
-
-    winning_line = id_lines.find do |line|
-      line.all? && line.uniq.size == 1
-    end
-
-    winning_id = winning_line&.first
-    winning_id ? players[winning_id] : nil
+    nil
   end
 
   def display_grid
@@ -174,7 +179,7 @@ class TTTGame
     choice = nil
     options = %w(y n)
     loop do
-      puts "Would you like to play again?"
+      puts "Would you like to play again? (#{options.join('/')})"
       choice = gets.strip.downcase
       break if options.include?(choice)
       puts "Invalid input"
