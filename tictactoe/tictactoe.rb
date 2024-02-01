@@ -1,4 +1,35 @@
+module Promptable
+  def generic_prompt_binary?(true_answer, false_answer, message)
+    options = [true_answer, false_answer]
+    generic_prompt_select(options, message, '/') == true_answer
+  end
+
+  def generic_prompt_select(options, message, separator = ', ')
+    choice = nil
+
+    loop do
+      puts "#{message} (#{options.join(separator)})"
+      choice = gets.chomp
+      autocomplete!(choice, options)
+      break if options.include?(choice)
+      puts "Invalid input"
+    end
+
+    choice
+  end
+
+  def autocomplete!(partial, full_strings)
+    matches = full_strings.select do |str|
+      str.strip.downcase.start_with?(partial.strip.downcase)
+    end
+
+    partial.replace(matches.first.clone) if matches.size == 1
+  end
+end
+
 class Player
+  include Promptable
+
   attr_accessor :board, :score
   attr_reader :id, :name
 
@@ -21,14 +52,8 @@ end
 
 class Human < Player
   def move
-    choice = nil
     options = board.open_squares
-    loop do
-      puts "#{name}, choose your next move (#{options.join(', ')})"
-      choice = gets.strip.downcase
-      break if options.include?(choice)
-      puts "Invalid input"
-    end
+    choice = generic_prompt_select(options, "#{name}, choose your next move:")
     board[choice] = id
   end
 
@@ -137,6 +162,8 @@ class Board
 end
 
 class TTTGame
+  include Promptable
+
   def play
     display_welcome
     loop do
@@ -177,15 +204,7 @@ class TTTGame
   end
 
   def prompt_play_again?
-    choice = nil
-    options = %w(y n)
-    loop do
-      puts "Would you like to play again? (#{options.join('/')})"
-      choice = gets.strip.downcase
-      break if options.include?(choice)
-      puts "Invalid input"
-    end
-    choice == 'y'
+    generic_prompt_binary?('y', 'n', 'Would you like to play again?')
   end
 
   def display_welcome
