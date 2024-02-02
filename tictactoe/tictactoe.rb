@@ -31,7 +31,7 @@ class Player
   include Promptable
 
   attr_accessor :board, :score
-  attr_reader :id, :name
+  attr_reader :id, :name, :token
 
   def reset
     self.score = 0
@@ -41,9 +41,12 @@ class Player
 
   @@instances = 0
 
-  def initialize
+  def initialize(board)
     @id = @@instances
     @@instances += 1
+
+    self.board = board
+    @token = Board::PLAYER_TOKENS[id]
 
     choose_name
     reset
@@ -54,7 +57,7 @@ class Human < Player
   def move
     options = board.open_squares
     choice = generic_prompt_select(options, "#{name}, choose your next move:")
-    board[choice] = id
+    board[choice] = self
   end
 
   def choose_name
@@ -73,9 +76,7 @@ class Computer < Player
   def move
     options = board.open_squares
     choice = options.sample
-    # TODO: relocate display logic from move choice method
-    puts "#{name} plays #{choice}"
-    board[choice] = id
+    board[choice] = self
   end
 
   def choose_name
@@ -84,7 +85,7 @@ class Computer < Player
 end
 
 class Board
-  attr_reader :squares, :players
+  attr_reader :squares, :move_log
 
   ROWS = %w(a b c)
   COLS = %w(1 2 3)
@@ -104,14 +105,13 @@ class Board
   PLAYER_TOKENS = %w(X O)
   NIL_TOKEN = '.'
 
-  def initialize(players)
-    @players = players
-    players.values.each { |player| player.board = self }
+  def initialize
     reset
   end
 
   def reset
     @squares = SQUARE_NAMES.to_h { |name| [name, nil] }
+    @move_log = []
   end
 
   def open_squares
@@ -119,6 +119,7 @@ class Board
   end
 
   def []=(name, contents)
+    move_log << [name, contents]
     squares[name] = contents
   end
 
@@ -131,16 +132,24 @@ class Board
     WINNING_LINES.each do |line|
       values = line.map { |name| squares[name] }
       next unless values.all? && values.uniq.size == 1
-      winner_id = values[0]
-      return players[winner_id]
+      winning_player = values[0]
+      return winning_player
     end
     nil
   end
 
+  def display_last_move
+    return if move_log.empty?
+    square, player = move_log.last
+    puts "#{player.name} played #{square}."
+  end
+
   def display_grid
+    display_last_move
+
     token_rows = ROW_GROUPS.map do |group|
       group.map { |name| squares[name] }
-           .map { |id| id ? PLAYER_TOKENS[id] : NIL_TOKEN }
+           .map { |player| player ? player.token : NIL_TOKEN }
     end
 
     puts "   #{COLS.join(' ')}"
@@ -181,23 +190,18 @@ class TTTGame
   GAME_NAME = "Tic Tac Toe"
 
   def initialize
-    system 'clear'
+    @board = Board.new
 
-    @player1 = Human.new
-    @player2 = Computer.new
-    @players = [@player1, @player2].to_h { |player| [player.id, player] }
-
-    @board = Board.new(players)
+    @players = [Human.new(board), Computer.new(board)]
   end
 
   def play_round
     board.reset
-    board.display_grid
-    players.values.cycle do |player|
-      player.move
+    players.cycle do |player|
       system 'clear'
       board.display_grid
       break if board.game_over?
+      player.move
     end
     board.display_winner
     board.winner&.score += 1
@@ -208,6 +212,7 @@ class TTTGame
   end
 
   def display_welcome
+    system 'clear'
     puts "Welcome to #{GAME_NAME}!"
   end
 
@@ -216,7 +221,7 @@ class TTTGame
   end
 
   def display_score
-    players.values.each do |player|
+    players.each do |player|
       plural_suffix = player.score == 1 ? '' : 's'
       puts "#{player.name} has #{player.score} point#{plural_suffix}."
     end
