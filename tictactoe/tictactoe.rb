@@ -18,6 +18,20 @@ module Promptable
     choice
   end
 
+  def generic_prompt_open(message, block = [])
+    choice = nil
+
+    loop do
+      puts message
+      choice = gets.strip
+      break unless choice.empty? || block.include?(choice)
+      error = choice.empty? ? "empty." : "in blocklist (#{block.join(', ')})"
+      puts "Input cannot be #{error}"
+    end
+
+    choice
+  end
+
   def autocomplete!(partial, full_strings)
     matches = full_strings.select do |str|
       str.strip.downcase.start_with?(partial.strip.downcase)
@@ -56,26 +70,19 @@ end
 class Human < Player
   def move
     options = board.open_squares
-    choice = generic_prompt_select(options, "#{name}, choose your next move:")
+    message = "#{name} (#{token}), choose your next move:"
+    choice = generic_prompt_select(options, message)
     board[choice] = self
   end
 
   def choose_name
-    choice = nil
-    loop do
-      puts "Enter your name (cannot be blank)"
-      choice = gets.strip
-      break unless choice.empty?
-      puts "Invalid input"
-    end
-    @name = choice
+    @name = generic_prompt_open('Enter your name:')
   end
 end
 
 class Computer < Player
   def move
-    options = board.open_squares
-    choice = options.sample
+    choice = board.open_squares.sample
     board[choice] = self
   end
 
@@ -118,9 +125,9 @@ class Board
     squares.keys.select { |name| squares[name].nil? }
   end
 
-  def []=(name, contents)
-    move_log << [name, contents]
-    squares[name] = contents
+  def []=(square_name, player)
+    move_log << [square_name, player]
+    squares[square_name] = player
   end
 
   def game_over?
@@ -148,7 +155,7 @@ class Board
   def display_last_move
     return if move_log.empty?
     square, player = move_log.last
-    puts "#{player.name} played #{square}."
+    puts "#{player.name} (#{player.token}) played #{square}."
   end
 
   def display_grid
