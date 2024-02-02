@@ -131,16 +131,15 @@ class Board
   end
 
   def game_over?
-    open_squares.empty? || winner
+    open_squares.empty? || winning_player
   end
 
-  # returns a Player object, or nil if no winner
-  def winner
+  def winning_player
     WINNING_LINES.each do |line|
       values = line.map { |name| squares[name] }
       next unless values.all? && values.uniq.size == 1
-      winning_player = values[0]
-      return winning_player
+      winner = values[0]
+      return winner
     end
     nil
   end
@@ -172,13 +171,7 @@ class Board
   end
 
   def display_winner
-    winning_player = winner
-
-    if winning_player
-      puts "#{winning_player.name} wins the round."
-    else
-      puts "Tie round."
-    end
+    puts (winning_player&.name&.+ " wins the round.") || "Tie round."
   end
 end
 
@@ -216,7 +209,7 @@ class TTTGame
       board.display
       break if board.game_over?
     end
-    board.winner&.score += 1
+    board.winning_player&.score += 1
   end
 
   def populate_players(num_players = 2)
