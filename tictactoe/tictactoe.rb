@@ -138,6 +138,13 @@ class Board
     nil
   end
 
+  def display
+    system 'clear'
+    display_last_move
+    display_grid
+    display_winner if game_over?
+  end
+
   def display_last_move
     return if move_log.empty?
     square, player = move_log.last
@@ -145,8 +152,6 @@ class Board
   end
 
   def display_grid
-    display_last_move
-
     token_rows = ROW_GROUPS.map do |group|
       group.map { |name| squares[name] }
            .map { |player| player ? player.token : NIL_TOKEN }
@@ -175,6 +180,7 @@ class TTTGame
 
   def play
     display_welcome
+    populate_players
     loop do
       play_round
       display_score
@@ -192,19 +198,30 @@ class TTTGame
   def initialize
     @board = Board.new
 
-    @players = [Human.new(board), Computer.new(board)]
+    @players = []
   end
 
   def play_round
     board.reset
+    board.display
     players.cycle do |player|
-      system 'clear'
-      board.display_grid
-      break if board.game_over?
       player.move
+      board.display
+      break if board.game_over?
     end
-    board.display_winner
     board.winner&.score += 1
+  end
+
+  def populate_players(num_players = 2)
+    while players.size < num_players
+      players << (prompt_human? ? Human.new(board) : Computer.new(board))
+    end
+  end
+
+  def prompt_human?
+    puts "Players: #{players.map(&:name).join(', ')}"
+    generic_prompt_binary?('human', 'computer',
+                           'Fill next player slot with human or computer?')
   end
 
   def prompt_play_again?
