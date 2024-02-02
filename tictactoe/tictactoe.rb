@@ -60,6 +60,7 @@ class Player
     @@instances += 1
 
     self.board = board
+    # TODO: choose token (needs to be aware of claimed tokens)
     @token = Board::PLAYER_TOKENS[id]
 
     choose_name
@@ -155,6 +156,7 @@ class Board
     return if move_log.empty?
     square, player = move_log.last
     puts "#{player.name} (#{player.token}) played #{square}."
+    puts
   end
 
   def display_grid
@@ -168,10 +170,12 @@ class Board
     3.times do |index|
       puts "#{ROWS[index]} |#{token_rows[index].join('|')}|"
     end
+    puts
   end
 
   def display_winner
     puts (winning_player&.name&.+ " wins the round.") || "Tie round."
+    puts
   end
 end
 
@@ -197,17 +201,15 @@ class TTTGame
 
   def initialize
     @board = Board.new
-
     @players = []
   end
 
   def play_round
     board.reset
-    board.display
     players.cycle do |player|
-      player.move
       board.display
       break if board.game_over?
+      player.move
     end
     board.winning_player&.score += 1
   end
@@ -219,7 +221,7 @@ class TTTGame
   end
 
   def prompt_human?
-    puts "Players: #{players.map(&:name).join(', ')}"
+    puts "Players: #{players.map(&:name).join(', ')}" unless players.empty?
     generic_prompt_binary?('human', 'computer',
                            'Fill next player slot with human or computer?')
   end
@@ -231,6 +233,7 @@ class TTTGame
   def display_welcome
     system 'clear'
     puts "Welcome to #{GAME_NAME}!"
+    puts
   end
 
   def display_goodbye
@@ -242,6 +245,7 @@ class TTTGame
       plural_suffix = player.score == 1 ? '' : 's'
       puts "#{player.name} has #{player.score} point#{plural_suffix}."
     end
+    puts
   end
 end
 
