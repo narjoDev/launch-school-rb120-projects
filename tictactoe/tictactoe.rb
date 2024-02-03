@@ -18,7 +18,7 @@ module Promptable
     choice
   end
 
-  def generic_prompt_open(message, block = [])
+  def generic_prompt_open(message, block: [])
     choice = nil
 
     loop do
@@ -152,6 +152,8 @@ class Board
     display_winner if game_over?
   end
 
+  private
+
   def display_last_move
     return if move_log.empty?
     square, player = move_log.last
@@ -186,8 +188,7 @@ class TTTGame
     display_welcome
     populate_players
     loop do
-      play_round
-      display_score
+      play_match
       break unless prompt_play_again?
     end
     display_goodbye
@@ -198,10 +199,20 @@ class TTTGame
   attr_reader :board, :players
 
   GAME_NAME = "Tic Tac Toe"
+  SCORE_TO_WIN = 3
 
   def initialize
     @board = Board.new
     @players = []
+  end
+
+  def play_match
+    reset_match
+    until match_over?
+      play_round
+      display_score
+      prompt_continue unless match_over?
+    end
   end
 
   def play_round
@@ -220,10 +231,27 @@ class TTTGame
     end
   end
 
+  def reset_match
+    players.each { |player| player.score = 0 }
+  end
+
+  def match_over?
+    players.map(&:score).max >= SCORE_TO_WIN
+  end
+
+  def match_winner
+    players.max_by(&:score)
+  end
+
   def prompt_human?
     puts "Players: #{players.map(&:name).join(', ')}" unless players.empty?
     generic_prompt_binary?('human', 'computer',
                            'Fill next player slot with human or computer?')
+  end
+
+  def prompt_continue
+    puts "Press enter to continue."
+    gets
   end
 
   def prompt_play_again?
@@ -240,11 +268,21 @@ class TTTGame
     puts "Thanks for playing #{GAME_NAME}. Goodbye."
   end
 
-  def display_score
+  def display_points
     players.each do |player|
       plural_suffix = player.score == 1 ? '' : 's'
       puts "#{player.name} has #{player.score} point#{plural_suffix}."
     end
+  end
+
+  def display_score
+    display_points
+
+    puts(if match_over?
+           "#{match_winner.name} wins the match!"
+         else
+           "Playing to #{SCORE_TO_WIN} points."
+         end)
     puts
   end
 end
