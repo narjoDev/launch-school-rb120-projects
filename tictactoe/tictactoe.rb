@@ -1,4 +1,9 @@
 module Promptable
+  def prompt_continue(message = "Press enter to continue.")
+    puts message
+    gets
+  end
+
   def generic_prompt_binary?(true_answer, false_answer, message)
     options = [true_answer, false_answer]
     generic_prompt_select(options, message, '/') == true_answer
@@ -218,6 +223,12 @@ class TTTGame
     @players = []
   end
 
+  def populate_players(num_players = 2)
+    while players.size < num_players
+      players << (prompt_human? ? Human.new(board) : Computer.new(board))
+    end
+  end
+
   def play_match
     reset_match
     until match_over?
@@ -237,12 +248,6 @@ class TTTGame
     board.winning_player&.score += 1
   end
 
-  def populate_players(num_players = 2)
-    while players.size < num_players
-      players << (prompt_human? ? Human.new(board) : Computer.new(board))
-    end
-  end
-
   def reset_match
     players.each { |player| player.score = 0 }
   end
@@ -259,11 +264,6 @@ class TTTGame
     puts "Players: #{players.map(&:name).join(', ')}" unless players.empty?
     generic_prompt_binary?('human', 'computer',
                            'Fill next player slot with human or computer?')
-  end
-
-  def prompt_continue
-    puts "Press enter to continue."
-    gets
   end
 
   def prompt_play_again?
