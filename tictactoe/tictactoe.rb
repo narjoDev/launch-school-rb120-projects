@@ -46,7 +46,7 @@ class Player
   include Promptable
 
   attr_accessor :board, :score
-  attr_reader :id, :name, :token
+  attr_reader :name, :token
 
   def reset
     self.score = 0
@@ -54,12 +54,7 @@ class Player
 
   private
 
-  @@instances = 0
-
   def initialize(board)
-    @id = @@instances
-    @@instances += 1
-
     self.board = board
 
     choose_name
