@@ -18,15 +18,16 @@ module Promptable
     choice
   end
 
-  def generic_prompt_open(message, block: [])
+  def generic_prompt_open(message, block: [], max_length: 20)
     choice = nil
 
     loop do
       puts message
-      choice = gets.strip
+      puts "Reserved: (#{block.join(', ')})" unless block.empty?
+      puts "Max characters: #{max_length}"
+      choice = gets.strip[...max_length]
       break unless choice.empty? || block.include?(choice)
-      error = choice.empty? ? "empty." : "in blocklist (#{block.join(', ')})"
-      puts "Input cannot be #{error}"
+      puts "Input cannot be empty or reserved."
     end
 
     choice
@@ -60,10 +61,9 @@ class Player
     @@instances += 1
 
     self.board = board
-    # TODO: choose token (needs to be aware of claimed tokens)
-    @token = Board::PLAYER_TOKENS[id]
 
     choose_name
+    choose_token
     reset
   end
 end
@@ -79,6 +79,13 @@ class Human < Player
   def choose_name
     @name = generic_prompt_open('Enter your name:')
   end
+
+  def choose_token
+    claimed = board.claimed_tokens
+    message = "Enter a character token"
+    @token = generic_prompt_open(message, block: claimed, max_length: 1)
+    board.claimed_tokens << token
+  end
 end
 
 class Computer < Player
@@ -90,10 +97,17 @@ class Computer < Player
   def choose_name
     @name = 'Computer'
   end
+
+  def choose_token
+    claimed = board.claimed_tokens
+    defaults = Board::TOKEN_DEFAULTS
+    @token = (defaults - claimed).sample
+    board.claimed_tokens << token
+  end
 end
 
 class Board
-  attr_reader :squares, :move_log
+  attr_reader :squares, :move_log, :claimed_tokens
 
   ROWS = %w(a b c)
   COLS = %w(1 2 3)
@@ -110,10 +124,11 @@ class Board
                    ["a1", "b2", "c3"],
                    ["a3", "b2", "c1"]]
 
-  PLAYER_TOKENS = %w(X O)
-  NIL_TOKEN = '.'
+  TOKEN_DEFAULTS = %w(X O $ % *)
+  TOKEN_NIL = '.'
 
   def initialize
+    @claimed_tokens = [TOKEN_NIL]
     reset
   end
 
@@ -164,7 +179,7 @@ class Board
   def display_grid
     token_rows = ROW_GROUPS.map do |group|
       group.map { |name| squares[name] }
-           .map { |player| player ? player.token : NIL_TOKEN }
+           .map { |player| player ? player.token : TOKEN_NIL }
     end
 
     puts "   #{COLS.join(' ')}"
