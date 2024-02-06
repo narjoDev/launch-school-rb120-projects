@@ -45,8 +45,8 @@ end
 class Player
   include Promptable
 
-  attr_accessor :board, :score
-  attr_reader :name, :token
+  attr_accessor :score
+  attr_reader :name, :token, :board
 
   def reset
     self.score = 0
@@ -55,7 +55,7 @@ class Player
   private
 
   def initialize(board)
-    self.board = board
+    @board = board
 
     choose_name
     choose_token
@@ -65,9 +65,10 @@ end
 
 class Human < Player
   def move
-    options = board.open_squares
-    message = "#{name} (#{token}), choose your next move:"
-    choice = generic_prompt_select(options, message)
+    choice = generic_prompt_select(
+      board.open_squares,
+      "#{name} (#{token}), choose your next move:"
+    )
     board[choice] = self
   end
 
@@ -76,14 +77,18 @@ class Human < Player
   end
 
   def choose_token
-    claimed = board.claimed_tokens
-    message = "Enter a character token"
-    @token = generic_prompt_open(message, block: claimed, max_length: 1)
+    @token = generic_prompt_open(
+      "Enter a character token",
+      block: board.claimed_tokens,
+      max_length: 1
+    )
     board.claimed_tokens << token
   end
 end
 
 class Computer < Player
+  TOKENS = %w(X O $ % *)
+
   def move
     choice = board.open_squares.sample
     board[choice] = self
@@ -94,9 +99,7 @@ class Computer < Player
   end
 
   def choose_token
-    claimed = board.claimed_tokens
-    defaults = Board::TOKEN_DEFAULTS
-    @token = (defaults - claimed).sample
+    @token = (TOKENS - board.claimed_tokens).sample
     board.claimed_tokens << token
   end
 end
@@ -119,7 +122,6 @@ class Board
                    ["a1", "b2", "c3"],
                    ["a3", "b2", "c1"]]
 
-  TOKEN_DEFAULTS = %w(X O $ % *)
   TOKEN_NIL = '.'
 
   def initialize
@@ -147,10 +149,10 @@ class Board
 
   def winning_player
     WINNING_LINES.each do |line|
-      values = line.map { |name| squares[name] }
-      next unless values.all? && values.uniq.size == 1
-      winner = values[0]
-      return winner
+      square_contents = line.map { |name| squares[name] }
+      next unless square_contents.all? && square_contents.uniq.size == 1
+      player = square_contents[0]
+      return player
     end
     nil
   end
