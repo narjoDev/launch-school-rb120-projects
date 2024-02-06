@@ -95,7 +95,11 @@ class Computer < Player
   TOKENS = %w(X O $ % *)
 
   def move
-    choice = board.open_squares.sample
+    wins = board.open_wins
+    self_wins = wins[self] || []
+    others_wins = wins.reject { |player, _| player == self }.values.flatten
+    choice = self_wins.sample || others_wins.sample || board.open_squares.sample
+
     board[choice] = self
   end
 
@@ -156,10 +160,24 @@ class Board
     WINNING_LINES.each do |line|
       square_contents = line.map { |name| squares[name] }
       next unless square_contents.all? && square_contents.uniq.size == 1
-      player = square_contents[0]
+      player = square_contents.first
       return player
     end
     nil
+  end
+
+  # returns hash; keys are players, values are lists of squares
+  def open_wins
+    return if game_over?
+    moves = {}
+    WINNING_LINES.each do |line|
+      square_contents = line.map { |name| squares[name] }
+      next unless square_contents.one?(nil) && square_contents.uniq.size == 2
+      square = line[square_contents.index(nil)]
+      player = square_contents.compact.first
+      moves[player] = moves.fetch(player, []).append(square)
+    end
+    moves
   end
 
   def display
