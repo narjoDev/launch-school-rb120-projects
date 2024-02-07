@@ -4,6 +4,18 @@ module Promptable
     gets
   end
 
+  def generic_prompt_number(message, range)
+    number = nil
+
+    loop do
+      puts message
+      puts "Enter a number between #{range.min} and #{range.max}."
+      number = gets.chomp.to_i
+      return number if range.include?(number)
+      puts "Invalid. Number was not in range."
+    end
+  end
+
   def generic_prompt_binary?(true_answer, false_answer, message)
     options = [true_answer, false_answer]
     generic_prompt_select(options, message, '/') == true_answer
@@ -16,26 +28,22 @@ module Promptable
       puts "#{message} (#{options.join(separator)})"
       choice = gets.chomp
       autocomplete!(choice, options)
-      break if options.include?(choice)
+      return choice if options.include?(choice)
       puts "Invalid input"
     end
-
-    choice
   end
 
   def generic_prompt_open(message, block: [], max_length: 20)
-    choice = nil
+    entry = nil
 
     loop do
       puts message
       puts "Reserved: (#{block.join(', ')})" unless block.empty?
       puts "Max characters: #{max_length}"
-      choice = gets.strip[...max_length]
-      break unless choice.empty? || block.include?(choice)
+      entry = gets.strip[...max_length]
+      return entry unless entry.empty? || block.include?(entry)
       puts "Input cannot be empty or reserved."
     end
-
-    choice
   end
 
   def autocomplete!(partial, full_strings)
