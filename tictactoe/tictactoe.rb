@@ -125,6 +125,7 @@ class Board
   attr_reader :squares, :move_log, :claimed_tokens, :size
 
   SIZE_RANGE = 3..5
+  # 5x5 is barely playable without rule changes
   ROW_LETTERS = Array('a'..'i')
   COL_NUMBERS = Array('1'..'9')
 
@@ -254,6 +255,8 @@ class TTTGame
 
   GAME_NAME = "Tic Tac Toe"
   SCORE_TO_WIN = 3
+  PLAYER_NUMBER_RANGE = 1..2
+  # 3 players would call for a mechanical change to feel playable
 
   # Why no initialize method?
   # - virtually all the initialization requires prompting the user
@@ -266,9 +269,10 @@ class TTTGame
     @board = Board.new(board_size)
   end
 
-  def populate_players(num_players = 2)
+  def populate_players
     @players = []
-    while players.size < num_players
+    number_players = prompt_number_players
+    while players.size < number_players
       players << (prompt_human? ? Human.new(board) : Computer.new(board))
     end
   end
@@ -307,6 +311,11 @@ class TTTGame
   def prompt_board_size
     message = "What size board would you like to play on? (NxN)"
     generic_prompt_number(message, Board::SIZE_RANGE)
+  end
+
+  def prompt_number_players
+    message = "How many players would you like there to be? (2 is standard)"
+    generic_prompt_number(message, PLAYER_NUMBER_RANGE)
   end
 
   def prompt_human?
