@@ -122,32 +122,23 @@ class Computer < Player
 end
 
 class Board
-  attr_reader :squares, :move_log, :claimed_tokens
+  attr_reader :squares, :move_log, :claimed_tokens, :size
 
-  ROWS = %w(a b c)
-  COLS = %w(1 2 3)
-  SQUARE_NAMES = %w(a1 a2 a3 b1 b2 b3 c1 c2 c3)
-
-  ROW_GROUPS = [["a1", "a2", "a3"], ["b1", "b2", "b3"], ["c1", "c2", "c3"]]
-
-  WINNING_LINES = [["a1", "a2", "a3"],
-                   ["b1", "b2", "b3"],
-                   ["c1", "c2", "c3"],
-                   ["a1", "b1", "c1"],
-                   ["a2", "b2", "c2"],
-                   ["a3", "b3", "c3"],
-                   ["a1", "b2", "c3"],
-                   ["a3", "b2", "c1"]]
+  SIZE_RANGE = 3..5
+  ROW_LETTERS = Array('a'..'i')
+  COL_NUMBERS = Array('1'..'9')
 
   TOKEN_NIL = '.'
 
-  def initialize
+  def initialize(size = 3)
     @claimed_tokens = [TOKEN_NIL]
+    @size = size
+    generate_board_attributes
     reset
   end
 
   def reset
-    @squares = SQUARE_NAMES.to_h { |name| [name, nil] }
+    @squares = @square_names.to_h { |name| [name, nil] }
     @move_log = []
   end
 
@@ -165,7 +156,7 @@ class Board
   end
 
   def winning_player
-    WINNING_LINES.each do |line|
+    @winning_lines.each do |line|
       square_contents = line.map { |name| squares[name] }
       next unless square_contents.all? && square_contents.uniq.size == 1
       player = square_contents.first
@@ -178,7 +169,7 @@ class Board
   def open_wins
     return if game_over?
     moves = {}
-    WINNING_LINES.each do |line|
+    @winning_lines.each do |line|
       square_contents = line.map { |name| squares[name] }
       next unless square_contents.one?(nil) && square_contents.uniq.size == 2
       square = line[square_contents.index(nil)]
@@ -197,6 +188,25 @@ class Board
 
   private
 
+  def generate_board_attributes
+    generate_names
+    generate_lines
+  end
+
+  def generate_names
+    @rows = ROW_LETTERS[0, size]
+    @cols = COL_NUMBERS[0, size]
+    @square_names = @rows.product(@cols).map(&:join)
+  end
+
+  def generate_lines
+    @row_groups = @rows.map { |r| @cols.map { |c| r + c } }
+    col_groups = @row_groups.transpose
+    diag_groups = [@rows.zip(@cols).map(&:join),
+                   @rows.zip(@cols.reverse).map(&:join)]
+    @winning_lines = @row_groups + col_groups + diag_groups
+  end
+
   def display_last_move
     return if move_log.empty?
     square, player = move_log.last
@@ -205,15 +215,15 @@ class Board
   end
 
   def display_grid
-    token_rows = ROW_GROUPS.map do |group|
+    token_rows = @row_groups.map do |group|
       group.map { |name| squares[name] }
            .map { |player| player ? player.token : TOKEN_NIL }
     end
 
-    puts "   #{COLS.join(' ')}"
+    puts "   #{@cols.join(' ')}"
 
-    3.times do |index|
-      puts "#{ROWS[index]} |#{token_rows[index].join('|')}|"
+    size.times do |index|
+      puts "#{@rows[index]} |#{token_rows[index].join('|')}|"
     end
     puts
   end
@@ -229,6 +239,7 @@ class TTTGame
 
   def play
     display_welcome
+    populate_board
     populate_players
     loop do
       play_match
@@ -244,12 +255,19 @@ class TTTGame
   GAME_NAME = "Tic Tac Toe"
   SCORE_TO_WIN = 3
 
-  def initialize
-    @board = Board.new
-    @players = []
+  # Why no initialize method?
+  # - virtually all the initialization requires prompting the user
+  #   for the board size and for player information
+  # - we want play to initiate on game.play rather than TTTGame.new
+  # - we don't want the user to be prompted upon instantiating a game object
+
+  def populate_board
+    board_size = prompt_board_size
+    @board = Board.new(board_size)
   end
 
   def populate_players(num_players = 2)
+    @players = []
     while players.size < num_players
       players << (prompt_human? ? Human.new(board) : Computer.new(board))
     end
@@ -284,6 +302,11 @@ class TTTGame
 
   def match_winner
     players.max_by(&:score)
+  end
+
+  def prompt_board_size
+    message = "What size board would you like to play on? (NxN)"
+    generic_prompt_number(message, Board::SIZE_RANGE)
   end
 
   def prompt_human?
