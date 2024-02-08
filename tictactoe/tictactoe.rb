@@ -1,5 +1,9 @@
 module Promptable
-  def prompt_continue(message = "Press enter to continue.")
+  def clear
+    system 'clear'
+  end
+
+  def prompt_continue(message = "Press Enter to continue.")
     puts message
     gets
   end
@@ -88,13 +92,13 @@ class Human < Player
   private
 
   def choose_name
-    @name = generic_prompt_open('Enter your name:', block: board.player_names)
+    @name = generic_prompt_open('Enter player name', block: board.player_names)
     board.player_names << name
   end
 
   def choose_token
     @token = generic_prompt_open(
-      "Enter a character token",
+      "Enter a token for #{name}",
       block: board.claimed_tokens,
       max_length: 1
     )
@@ -141,6 +145,8 @@ class Computer < Player
 end
 
 class Board
+  include Promptable
+
   attr_reader :squares, :move_log, :claimed_tokens, :size, :player_names
 
   SIZE_RANGE = 3..5
@@ -148,13 +154,14 @@ class Board
   ROW_LETTERS = Array('a'..'i')
   COL_NUMBERS = Array('1'..'9')
 
-  TOKEN_NIL = '.'
+  TOKEN_NIL = '_'
+  DISPLAY_SEPARATOR = '|'
 
   def initialize(size = 3)
-    @claimed_tokens = [TOKEN_NIL]
     @player_names = []
     @size = size
     generate_board_attributes
+    @claimed_tokens = [TOKEN_NIL, DISPLAY_SEPARATOR] + @rows + @cols
     reset
   end
 
@@ -201,7 +208,7 @@ class Board
   end
 
   def display
-    system 'clear'
+    clear
     display_last_move
     display_grid
     display_winner if game_over?
@@ -260,8 +267,7 @@ class TTTGame
 
   def play
     display_welcome
-    populate_board
-    populate_players
+    setup
     loop do
       play_match
       break unless prompt_play_again?
@@ -284,6 +290,13 @@ class TTTGame
   # - we want play to start on game.play rather than TTTGame.new
   # - we don't want the user to be prompted upon instantiating a game object
 
+  def setup
+    display_setup_intro
+    populate_board
+    populate_players
+    display_setup_summary
+  end
+
   def populate_board
     board_size = prompt_board_size
     @board = Board.new(board_size)
@@ -293,6 +306,7 @@ class TTTGame
     @players = []
     number_players = prompt_number_players
     while players.size < number_players
+      clear
       players << (prompt_human? ? Human.new(board) : Computer.new(board))
     end
   end
@@ -339,7 +353,7 @@ class TTTGame
   end
 
   def prompt_human?
-    puts "Players: #{players.map(&:name).join(', ')}"
+    display_players(show_token: true)
     slot_number = players.size + 1
     generic_prompt_binary?('human', 'computer',
                            "Fill slot #{slot_number} with human or computer?")
@@ -350,13 +364,35 @@ class TTTGame
   end
 
   def display_welcome
-    system 'clear'
+    clear
     puts "Welcome to #{GAME_NAME}!"
     puts
+    prompt_continue('Press Enter to begin setup.')
+  end
+
+  def display_setup_intro
+    clear
+    puts "First, we'll need to specify some game parameters..."
+    puts
+  end
+
+  def display_setup_summary
+    clear
+    puts "Playing on a #{board.size}x#{board.size} board."
+    display_players
+    prompt_continue('Press Enter to start the match already!')
   end
 
   def display_goodbye
     puts "Thanks for playing #{GAME_NAME}. Goodbye."
+  end
+
+  def display_players(show_token: false)
+    player_list = players.map do |player|
+      player.name + (show_token ? " (#{player.token})" : '')
+    end
+    separator = player_list.join.match?(',') ? '; ' : ', '
+    puts "Players: #{player_list.join(separator)}"
   end
 
   def display_score
