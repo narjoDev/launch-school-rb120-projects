@@ -102,14 +102,24 @@ end
 class Computer < Player
   TOKENS = %w(X O $ % *)
   NAMES = ['Lovelace', 'Row-gue AI', 'Beep, Son of Boop']
+  PERCENT_MISFIRES = 20
 
   def move
+    choice = win_or_save
+    choice = board.open_squares.sample if choice.nil? || misfires?
+
+    board[choice] = self
+  end
+
+  def win_or_save
     wins = board.open_wins
     self_wins = wins[self] || []
     others_wins = wins.reject { |player, _| player == self }.values.flatten
-    choice = self_wins.sample || others_wins.sample || board.open_squares.sample
+    self_wins.sample || others_wins.sample || nil
+  end
 
-    board[choice] = self
+  def misfires?
+    rand(100) < PERCENT_MISFIRES
   end
 
   def choose_name
