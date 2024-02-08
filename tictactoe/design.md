@@ -81,4 +81,4 @@ Dilemma: connection between players and board
 
 ## Questions for Code Review
 
-- Is there much point creating private getters, e.g. for `@rows`, `@winning_lines`, etc? It's worth noting that rubocop counts the getters toward Branches for ABC size, so converting to getters raises more complaints.
+- I am curious when there's much point creating private getters, e.g. for `@rows`, `@winning_lines`, etc? It's worth noting that rubocop counts the getters toward Branches for ABC size, so converting to getters raises more complaints.
