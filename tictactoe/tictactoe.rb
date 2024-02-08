@@ -12,7 +12,7 @@ module Promptable
       puts "Enter a number between #{range.min} and #{range.max}."
       number = gets.chomp.to_i
       return number if range.include?(number)
-      puts "Invalid. Number was not in range."
+      puts "Invalid input: number not in range."
     end
   end
 
@@ -29,7 +29,7 @@ module Promptable
       choice = gets.chomp
       autocomplete!(choice, options)
       return choice if options.include?(choice)
-      puts "Invalid input"
+      puts "Invalid input: not in options."
     end
   end
 
@@ -42,7 +42,7 @@ module Promptable
       puts "Max characters: #{max_length}"
       entry = gets.strip[...max_length]
       return entry unless entry.empty? || block.include?(entry)
-      puts "Input cannot be empty or reserved."
+      puts "Invalid input: empty or reserved."
     end
   end
 
@@ -51,7 +51,7 @@ module Promptable
       str.strip.downcase.start_with?(partial.strip.downcase)
     end
 
-    partial.replace(matches.first.clone) if matches.size == 1
+    partial.replace(matches.first.dup) if matches.size == 1
   end
 end
 
@@ -85,9 +85,11 @@ class Human < Player
     board[choice] = self
   end
 
+  private
+
   def choose_name
     @name = generic_prompt_open('Enter your name:', block: board.player_names)
-    board.player_names << @name
+    board.player_names << name
   end
 
   def choose_token
@@ -113,6 +115,8 @@ class Computer < Player
     board[choice] = self
   end
 
+  private
+
   def win_or_save
     wins = board.open_wins
     self_wins = wins[self] || []
@@ -127,7 +131,7 @@ class Computer < Player
   def choose_name
     unclaimed_name = (NAMES - board.player_names).sample
     @name = unclaimed_name || BACKUP_NAME
-    board.player_names << @name
+    board.player_names << name
   end
 
   def choose_token
@@ -275,9 +279,9 @@ class TTTGame
   # 3 players would call for a mechanical change to feel playable
 
   # Why no initialize method?
-  # - virtually all the initialization requires prompting the user
-  #   for the board size and for player information
-  # - we want play to initiate on game.play rather than TTTGame.new
+  # - most of the initialization requires prompting the user
+  #     for the board size and for player information
+  # - we want play to start on game.play rather than TTTGame.new
   # - we don't want the user to be prompted upon instantiating a game object
 
   def populate_board
@@ -335,9 +339,10 @@ class TTTGame
   end
 
   def prompt_human?
-    puts "Players: #{players.map(&:name).join(', ')}" unless players.empty?
+    puts "Players: #{players.map(&:name).join(', ')}"
+    slot_number = players.size + 1
     generic_prompt_binary?('human', 'computer',
-                           'Fill next player slot with human or computer?')
+                           "Fill slot #{slot_number} with human or computer?")
   end
 
   def prompt_play_again?
@@ -354,6 +359,11 @@ class TTTGame
     puts "Thanks for playing #{GAME_NAME}. Goodbye."
   end
 
+  def display_score
+    display_points
+    display_winner_or_target
+  end
+
   def display_points
     players.each do |player|
       plural_suffix = player.score == 1 ? '' : 's'
@@ -361,14 +371,11 @@ class TTTGame
     end
   end
 
-  def display_score
-    display_points
+  def display_winner_or_target
+    winner_message = "#{match_winner.name} wins the match!"
+    target_score_message = "Playing to #{SCORE_TO_WIN} points."
 
-    puts(if match_over?
-           "#{match_winner.name} wins the match!"
-         else
-           "Playing to #{SCORE_TO_WIN} points."
-         end)
+    puts match_over? ? winner_message : target_score_message
     puts
   end
 end
