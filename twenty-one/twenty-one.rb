@@ -1,8 +1,8 @@
 class Participant
-  attr_reader :cards
+  attr_reader :hand
 
   def initialize
-    @cards = []
+    @hand = Hand.new
   end
 
   # what goes in here? all the redundant behaviors from Player and Dealer?
@@ -10,10 +10,12 @@ class Participant
 
   def stay; end
 
-  def busted?; end
+  def busts?
+    hand.busts?
+  end
 
   def total
-    # definitely looks like we need to know about "cards" to produce some total
+    hand.value
   end
 end
 
@@ -40,7 +42,50 @@ class Deck
   end
 
   def deal(participant, number_cards = 1)
-    number_cards.times { participant.cards << @deck.pop }
+    number_cards.times { participant.hand << @deck.pop }
+  end
+end
+
+class Hand
+  attr_reader :cards
+
+  MAX_VALUE = 21
+  ACE_CONTINGENT_VALUE = 10
+
+  def initialize
+    @cards = []
+  end
+
+  def value
+    number_aces = cards.count(&:ace?)
+    total = cards.map(&:value)
+    while number_aces > 0 && (total + ACE_CONTINGENT_VALUE) <= MAX_VALUE
+      total += ACE_CONTINGENT_VALUE
+      number_aces -= 1
+    end
+    total
+  end
+
+  def busts?
+    value > MAX_VALUE
+  end
+
+  def <<(card)
+    cards << card
+  end
+
+  def <=>(other)
+    value <=> other.value # does not take into account busts
+  end
+
+  def display(obscure: false)
+    if obscure
+      puts cards.first
+      puts(cards[1..].map { "???" })
+    else
+      puts cards
+      puts "=>#{value}"
+    end
   end
 end
 
