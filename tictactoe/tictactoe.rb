@@ -160,7 +160,7 @@ class Board
   def initialize(size = 3)
     @player_names = []
     @size = size
-    generate_board_attributes
+    setup
     @claimed_tokens = [TOKEN_NIL, DISPLAY_SEPARATOR] + @rows + @cols
     reset
   end
@@ -216,7 +216,7 @@ class Board
 
   private
 
-  def generate_board_attributes
+  def setup
     generate_names
     generate_lines
   end
