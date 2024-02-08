@@ -101,6 +101,7 @@ end
 
 class Computer < Player
   TOKENS = %w(X O $ % *)
+  NAMES = ['Lovelace', 'Row-gue AI', 'Beep, Son of Boop']
 
   def move
     wins = board.open_wins
@@ -112,7 +113,7 @@ class Computer < Player
   end
 
   def choose_name
-    @name = 'Computer'
+    @name = NAMES.sample
   end
 
   def choose_token
