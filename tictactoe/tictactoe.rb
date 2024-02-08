@@ -86,7 +86,8 @@ class Human < Player
   end
 
   def choose_name
-    @name = generic_prompt_open('Enter your name:')
+    @name = generic_prompt_open('Enter your name:', block: board.player_names)
+    board.player_names << @name
   end
 
   def choose_token
@@ -102,6 +103,7 @@ end
 class Computer < Player
   TOKENS = %w(X O $ % *)
   NAMES = ['Lovelace', 'Row-gue AI', 'Beep, Son of Boop']
+  BACKUP_NAME = 'Computer' # if all above names have been taken
   PERCENT_MISFIRES = 20
 
   def move
@@ -123,7 +125,9 @@ class Computer < Player
   end
 
   def choose_name
-    @name = NAMES.sample
+    unclaimed_name = (NAMES - board.player_names).sample
+    @name = unclaimed_name || BACKUP_NAME
+    board.player_names << @name
   end
 
   def choose_token
@@ -133,7 +137,7 @@ class Computer < Player
 end
 
 class Board
-  attr_reader :squares, :move_log, :claimed_tokens, :size
+  attr_reader :squares, :move_log, :claimed_tokens, :size, :player_names
 
   SIZE_RANGE = 3..5
   # 5x5 is barely playable without rule changes
@@ -144,6 +148,7 @@ class Board
 
   def initialize(size = 3)
     @claimed_tokens = [TOKEN_NIL]
+    @player_names = []
     @size = size
     generate_board_attributes
     reset
