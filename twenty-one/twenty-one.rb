@@ -32,15 +32,15 @@ end
 
 class Deck
   def initialize
-    # nil
+    reset
   end
 
   def reset
     @deck = Card.full_deck.shuffle
   end
 
-  def deal(participant)
-    participant.cards << @deck.pop
+  def deal(participant, number_cards = 1)
+    number_cards.times { participant.cards << @deck.pop }
   end
 end
 
@@ -93,11 +93,27 @@ end
 class Game
   def start
     deal_cards
-    show_initial_cards
+    display_cards
     player_turn
     dealer_turn
     show_result
   end
+
+  private
+
+  attr_reader :deck, :player, :dealer
+
+  def initialize
+    @deck = Deck.new
+    @player = Player.new
+    @dealer = Dealer.new
+  end
+
+  def deal_cards
+    [player, dealer].each { |participant| deck.deal(participant, 2) }
+  end
+
+  def display_cards(reveal_dealer: false); end
 end
 
 # Game.new.start
