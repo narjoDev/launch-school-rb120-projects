@@ -2,16 +2,25 @@ class Participant
   attr_reader :hand
 
   def initialize
+    reset
+  end
+
+  def reset
     @hand = Hand.new
   end
 
-  # what goes in here? all the redundant behaviors from Player and Dealer?
-  def hit; end
-
-  def stay; end
-
   def busts?
     hand.busts?
+  end
+
+  def display(obscure: false)
+    puts "#{self.class} hand:"
+    hand.display(obscure:)
+    puts
+  end
+
+  def <=>(other)
+    hand <=> other.hand
   end
 
   def total
@@ -20,15 +29,24 @@ class Participant
 end
 
 class Player < Participant
-  def initialize
-    # what would the "data" or "states" of a Player object entail?
-    # maybe cards? a name?
+  def hit?
+    choice = nil
+
+    loop do
+      puts 'hit or stay? (h/s)'
+      choice = gets.strip.downcase[0]
+      break if %w(h s).include?(choice)
+      puts 'invalid input'
+    end
+    choice == 'h'
   end
 end
 
 class Dealer < Participant
-  def initialize
-    # seems like very similar to Player... do we even need this?
+  STAY_THRESHOLD = 17
+
+  def hit?
+    total < STAY_THRESHOLD
   end
 end
 
@@ -58,7 +76,7 @@ class Hand
 
   def value
     number_aces = cards.count(&:ace?)
-    total = cards.map(&:value)
+    total = cards.sum(&:value)
     while number_aces > 0 && (total + ACE_CONTINGENT_VALUE) <= MAX_VALUE
       total += ACE_CONTINGENT_VALUE
       number_aces -= 1
@@ -84,7 +102,7 @@ class Hand
       puts(cards[1..].map { "???" })
     else
       puts cards
-      puts "=>#{value}"
+      puts "=>#{value}" + (busts? ? " (BUSTED!)" : '')
     end
   end
 end
@@ -137,11 +155,15 @@ end
 
 class Game
   def start
-    deal_cards
-    display_cards
-    player_turn
-    dealer_turn
-    show_result
+    loop do
+      deal_cards
+      display_cards
+      player_turn
+      dealer_turn
+      show_result
+      break unless prompt_play_again?
+      reset
+    end
   end
 
   private
@@ -154,12 +176,65 @@ class Game
     @dealer = Dealer.new
   end
 
+  def reset
+    deck.reset
+    player.reset
+    dealer.reset
+  end
+
   def deal_cards
     [player, dealer].each { |participant| deck.deal(participant, 2) }
   end
 
-  def display_cards(reveal_dealer: false); end
+  def prompt_play_again?
+    choice = nil
+
+    loop do
+      puts "Would you like to play again? (y/n)"
+      choice = gets.strip.downcase[0]
+      break if %w(y n).include?(choice)
+      puts "Invalid input"
+    end
+    choice == 'y'
+  end
+
+  def display_cards(obscure_dealer: true)
+    system 'clear'
+    dealer.display(obscure: obscure_dealer)
+    player.display
+  end
+
+  def player_turn
+    loop do
+      break if player.busts? || !player.hit?
+      deck.deal(player)
+      display_cards
+    end
+  end
+
+  def dealer_turn
+    return if player.busts?
+    deck.deal(dealer) while dealer.hit?
+  end
+
+  def show_result
+    display_cards(obscure_dealer: false)
+    if player.busts?
+      puts "Player busted, Dealer wins!"
+    elsif dealer.busts?
+      puts "Dealer busted, Player wins!"
+    else
+      puts winner_by_score
+    end
+  end
+
+  def winner_by_score
+    case player <=> dealer
+    when  1 then "Player wins with a total of #{player.total}"
+    when  -1 then "Dealer wins with a total of #{dealer.total}"
+    when 0 then "Player and dealer tie with a total of #{player.total}"
+    end
+  end
 end
 
-# Game.new.start
-# puts Card.full_deck.map(&:to_s)
+Game.new.start
