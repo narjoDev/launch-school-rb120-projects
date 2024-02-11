@@ -16,7 +16,7 @@ AllCops:
   StyleGuideBaseURL: https://rubystyle.guide/
   # What version of the Ruby interpreter is the inspected code intended to
   # run on? (If there is more than one, set this to the lowest version.)
-  TargetRubyVersion: 3.2
+  TargetRubyVersion: 2.4
 
 Style/BlockComments:
   Description: 'Do not use block comments.'

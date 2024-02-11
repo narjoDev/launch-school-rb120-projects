@@ -44,7 +44,7 @@ module Promptable
       puts message
       puts "Reserved: (#{block.join(', ')})" unless block.empty?
       puts "Max characters: #{max_length}"
-      entry = gets.strip[...max_length]
+      entry = gets.strip[0...max_length]
       return entry unless entry.empty? || block.include?(entry)
       puts "Invalid input: empty or reserved."
     end
@@ -55,7 +55,7 @@ module Promptable
       str.strip.downcase.start_with?(partial.strip.downcase)
     end
 
-    partial.replace(matches.first.dup) if matches.size == 1
+    partial.replace(matches.first) if matches.size == 1
   end
 end
 
