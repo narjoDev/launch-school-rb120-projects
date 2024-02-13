@@ -15,7 +15,7 @@ class Participant
 
   def display(obscure: false)
     puts "#{self.class} hand:"
-    hand.display(obscure:)
+    hand.display(obscure: obscure)
     puts
   end
 
@@ -99,7 +99,7 @@ class Hand
   def display(obscure: false)
     if obscure
       puts cards.first
-      puts(cards[1..].map { "???" })
+      puts(cards[1..-1].map { "???" })
     else
       puts cards
       puts "=>#{value}" + (busts? ? " (BUSTED!)" : '')
