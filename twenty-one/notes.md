@@ -11,4 +11,4 @@
 ## Improvements
 
 - [ ] Display welcome and goodbye
-- [ ] Pause between dealer moves
+- [x] Pause between dealer moves

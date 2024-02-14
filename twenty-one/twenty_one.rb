@@ -175,6 +175,8 @@ class Game
 
   attr_reader :deck, :player, :dealer
 
+  DEFAULT_DELAY = 2
+
   def initialize
     @deck = Deck.new
     @player = Player.new
@@ -213,22 +215,30 @@ class Game
     loop do
       break if player.busts? || !player.hit?
       deck.deal(player)
+      pause
       display_cards
     end
   end
 
   def dealer_turn
     return if player.busts?
-    deck.deal(dealer) while dealer.hit?
+    while dealer.hit?
+      display_cards(obscure_dealer: false)
+      pause
+      deck.deal(dealer)
+    end
   end
 
   def show_result
-    display_cards(obscure_dealer: false)
     if player.busts?
+      display_cards
       puts "Player busted, Dealer wins!"
     elsif dealer.busts?
+      display_cards(obscure_dealer: false)
       puts "Dealer busted, Player wins!"
     else
+      display_cards(obscure_dealer: false)
+      pause
       puts winner_by_score
     end
   end
@@ -239,6 +249,15 @@ class Game
     when  -1 then "Dealer wins with a total of #{dealer.total}"
     when 0 then "Player and dealer tie with a total of #{player.total}"
     end
+  end
+
+  def pause
+    dots = 3
+    dots.times do
+      print '.'
+      sleep DEFAULT_DELAY.fdiv(dots)
+    end
+    puts
   end
 end
 
