@@ -1,6 +1,6 @@
 # Twenty-One Notes
 
-- [ ] Read reference implementation
+- [x] Read reference implementation
 
 ## Features
 

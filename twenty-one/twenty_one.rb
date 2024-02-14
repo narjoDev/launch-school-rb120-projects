@@ -230,14 +230,13 @@ class Game
   end
 
   def show_result
+    display_cards(obscure_dealer: player.busts?)
+
     if player.busts?
-      display_cards
       puts "Player busted, Dealer wins!"
     elsif dealer.busts?
-      display_cards(obscure_dealer: false)
       puts "Dealer busted, Player wins!"
     else
-      display_cards(obscure_dealer: false)
       pause
       puts winner_by_score
     end
