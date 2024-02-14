@@ -69,7 +69,7 @@ class Deck
 end
 
 class Hand
-  attr_reader :cards
+  attr_reader :cards, :value
 
   MAX_VALUE = 21
   ACE_CONTINGENT_VALUE = 10
@@ -78,14 +78,14 @@ class Hand
     @cards = []
   end
 
-  def value
+  def refresh_value
     number_aces = cards.count(&:ace?)
     total = cards.sum(&:value)
     while number_aces > 0 && (total + ACE_CONTINGENT_VALUE) <= MAX_VALUE
       total += ACE_CONTINGENT_VALUE
       number_aces -= 1
     end
-    total
+    @value = total
   end
 
   def busts?

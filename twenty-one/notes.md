@@ -4,11 +4,11 @@
 
 ## Features
 
-- [ ] Cache total value of hand
+- [x] Cache total value of hand
 - [ ] First to five hands wins (keep score)
 - [x] Constants for magic numbers
 
 ## Improvements
 
-- [ ] Display welcome
+- [ ] Display welcome and goodbye
 - [ ] Pause between dealer moves
