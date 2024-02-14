@@ -26,6 +26,10 @@ class Participant
   def total
     hand.value
   end
+
+  def receive(card)
+    hand << card
+  end
 end
 
 class Player < Participant
@@ -60,7 +64,7 @@ class Deck
   end
 
   def deal(participant, number_cards = 1)
-    number_cards.times { participant.hand << @deck.pop }
+    number_cards.times { participant.receive(@deck.pop) }
   end
 end
 
@@ -90,6 +94,7 @@ class Hand
 
   def <<(card)
     cards << card
+    refresh_value
   end
 
   def <=>(other)
